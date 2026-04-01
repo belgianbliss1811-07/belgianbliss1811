@@ -40,6 +40,13 @@ const CheckoutPage = () => {
       const { error: itemsError } = await supabase.from('order_items').insert(orderItems);
       if (itemsError) throw itemsError;
 
+      // Trigger the sensitive backend route to generate an invoice placeholder
+      try {
+        await api.post('/create-invoice', { orderId: newOrderId });
+      } catch (invoiceErr) {
+        console.log("Backend invoice generation deferred:", invoiceErr.message);
+      }
+
       setCustomerWhatsApp(whatsapp.trim());
       setOrderId(newOrderId);
       clearCart();
