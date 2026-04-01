@@ -1,0 +1,234 @@
+@import "tailwindcss";
+
+/* ─── Premium Fonts ─────────────────────────── */
+:root {
+  --font-display: "Playfair Display", Georgia, serif; /* Elegant, premium headers */
+  --font-body: "Inter", system-ui, sans-serif; /* Clean, modern body */
+
+  /* ─── Ultra-Premium Admin Dark Palette ─── */
+  --admin-bg: #030100;
+  --admin-sidebar: #070301;
+  --admin-card: rgba(15, 8, 4, 0.65);
+  --admin-border: rgba(217, 119, 6, 0.15);
+  --admin-text: #fdf6eb;
+  --admin-muted: #8b6e56;
+
+  /* ─── Ultra-Premium Customer LIGHT Mode (Milky Glass) ─── */
+  --customer-bg-top: #fbf9f6;
+  --customer-bg-bottom: #f2ebe1;
+  --customer-card-bg: rgba(255, 255, 255, 0.85);
+  --customer-card-border: rgba(180, 83, 9, 0.2);
+  --customer-text: #2d1806;
+  --customer-title: #1a0e04;
+  --customer-subtitle: #8b6e56;
+  --brand-primary: #d97706; /* Liquid Gold */
+  --brand-secondary: #f59e0b; /* Bright Amber */
+  --glow: rgba(217, 119, 6, 0.3);
+}
+
+/* ─── Ultra-Premium Customer DARK Mode (OLED & Neon Gold) ─── */
+html.dark:root {
+  --customer-bg-top: #000000; /* OLED Pitch Black */
+  --customer-bg-bottom: #080402; /* Extremely Deep Brown/Black */
+  --customer-card-bg: rgba(10, 5, 2, 0.7); /* Translucent dark brown glass */
+  --customer-card-border: rgba(217, 119, 6, 0.25); /* Muted neon gold border */
+  --customer-text: #faf4e8;
+  --customer-title: #fcd34d; /* Bright gold for glowing headers */
+  --customer-subtitle: #b48a66;
+  --brand-primary: #fbbf24; /* Pure Neon Gold */
+  --brand-secondary: #f59e0b;
+  --glow: rgba(251, 191, 36, 0.4);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+body {
+  font-family: var(--font-body);
+  background: var(--customer-bg-top);
+  color: var(--customer-text);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+/* ─── Custom Scrollbar ──────────────────── */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(217,119,6,0.3); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(217,119,6,0.8); }
+
+.font-display { font-family: var(--font-display); letter-spacing: -0.01em; }
+
+/* ─── Next-Gen Abstract Backgrounds ────────── */
+.bg-customer {
+  background: radial-gradient(circle at 15% 50%, rgba(217, 119, 6, 0.08), transparent 30%), 
+              radial-gradient(circle at 85% 30%, rgba(245, 158, 11, 0.08), transparent 30%),
+              linear-gradient(180deg, var(--customer-bg-top) 0%, var(--customer-bg-bottom) 100%);
+  min-height: 100vh;
+}
+.bg-customer-header {
+  background: rgba(var(--customer-bg-top-rgb), 0.8);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  border-bottom: 1px solid var(--customer-card-border);
+}
+
+/* ─── Glowing Deep Shadows (Apple Style) ──── */
+.shadow-premium {
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.3), 0 0 15px var(--glow);
+}
+
+/* ─── Premium Liquid Gold Text Gradients ──── */
+.text-gradient {
+  background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 2px 20px rgba(245, 158, 11, 0.2);
+}
+
+/* ─── Dynamic Glassmorphism Cards ─────────── */
+.customer-card {
+  background: var(--customer-card-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--customer-card-border);
+  border-radius: 1.5rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+  overflow: hidden;
+  position: relative;
+}
+/* Shimmer Effect Border Hover */
+.customer-card::before {
+  content: "";
+  position: absolute;
+  top: 0; left: -100%; width: 50%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+  transform: skewX(-20deg);
+  transition: 0.5s;
+  pointer-events: none;
+}
+.customer-card:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2), 0 0 15px rgba(217, 119, 6, 0.15);
+  border-color: var(--brand-primary);
+}
+.customer-card:hover::before {
+  left: 200%;
+}
+
+.glass-card {
+  background: var(--customer-card-bg);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--customer-card-border);
+  border-radius: 1.25rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+/* ─── High-End Futuristic Buttons ─────────── */
+.btn-primary {
+  background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
+  color: #000; /* Intense stark contrast */
+  padding: 0.85rem 1.75rem;
+  border-radius: 1rem;
+  font-weight: 800;
+  font-size: 1rem;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+  box-shadow: 0 4px 15px rgba(217, 119, 6, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+.btn-primary::after {
+  content: "";
+  position: absolute;
+  top: 0; left: -100%; width: 100%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: 0.4s;
+}
+.btn-primary:hover::after {
+  left: 100%;
+}
+.btn-primary:hover {
+  transform: translateY(-3px) scale(1.03);
+  box-shadow: 0 10px 25px rgba(217, 119, 6, 0.5), 0 0 30px rgba(245, 158, 11, 0.4);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--customer-title);
+  padding: 0.75rem 1.5rem;
+  border-radius: 1rem;
+  font-weight: 700;
+  border: 1.5px solid var(--customer-card-border);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.btn-ghost:hover {
+  background: rgba(217, 119, 6, 0.08);
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 15px rgba(217, 119, 6, 0.15);
+}
+
+/* ─── Apple-Style Floating App Bar (iOS Vibe) ─ */
+.floating-bottom-bar {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  padding: 1rem 1.5rem;
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+  border-top: 1px solid rgba(255,255,255,0.05);
+  box-shadow: 0 -10px 40px rgba(0,0,0,0.4);
+  z-index: 100;
+}
+html.dark .floating-bottom-bar {
+  background: rgba(5,2,0,0.7);
+  border-top: 1px solid rgba(217,119,6,0.15);
+}
+html:not(.dark) .floating-bottom-bar {
+  background: rgba(255,255,255,0.8);
+  border-top: 1px solid rgba(217,119,6,0.2);
+}
+
+/* ─── Smooth Floating Animations ──────────── */
+@keyframes floatUpFade { from { opacity: 0; transform: translateY(20px); filter: blur(5px); } to { opacity: 1; transform: translateY(0); filter: blur(0); } }
+@keyframes pulseSubtle { 0%, 100% { opacity: 0.8; transform: scale(1); } 50% { opacity: 1; transform: scale(1.05); } }
+@keyframes rotateGlow { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+.animate-fade-in { animation: floatUpFade 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+.animate-item-reveal { opacity: 0; animation: floatUpFade 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+
+/* Dashboard Badges */
+.badge { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.25rem 0.75rem; border-radius: 999px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
+.badge-pending { background: rgba(251, 191, 36, 0.15); color: #f59e0b; border: 1px solid rgba(251, 191, 36, 0.3); }
+.badge-preparing { background: rgba(59, 130, 246, 0.15); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.3); }
+.badge-served { background: rgba(34, 197, 94, 0.15); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.3); }
+.badge-paid { background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); }
+
+/* Forms & Inputs */
+.input-field { width: 100%; border: 1.5px solid var(--customer-card-border); border-radius: 1rem; padding: 0.875rem 1.25rem; font-family: var(--font-body); font-size: 1rem; background: var(--customer-bg-top); color: var(--customer-text); transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1); outline: none; box-shadow: inset 0 2px 4px rgba(0,0,0,0.05); }
+.input-field:focus { border-color: var(--brand-primary); box-shadow: 0 0 0 4px rgba(217, 119, 6, 0.15), inset 0 2px 4px rgba(0,0,0,0.05); background: var(--customer-card-bg); }
+.input-field-dark { width: 100%; border: 1.5px solid var(--admin-border); border-radius: 1rem; padding: 0.875rem 1.25rem; font-family: var(--font-body); font-size: 0.95rem; background: rgba(255, 255, 255, 0.02); color: var(--admin-text); transition: all 0.3s; outline: none; }
+.input-field-dark:focus { border-color: #d97706; box-shadow: 0 0 0 4px rgba(217, 119, 6, 0.2); background: rgba(255, 255, 255, 0.05); }
+
+/* Admin Base Overrides */
+.bg-admin { background: var(--admin-bg); min-height: 100vh; }
+.admin-sidebar { background: var(--admin-sidebar); border-right: 1px solid var(--admin-border); width: 260px; min-height: 100vh; position: fixed; left: 0; top: 0; bottom: 0; z-index: 50; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+.admin-content { margin-left: 260px; min-height: 100vh; background: var(--admin-bg); }
+.sidebar-link { display: flex; align-items: center; gap: 0.75rem; padding: 0.875rem 1.25rem; border-radius: 1rem; color: var(--admin-muted); font-weight: 600; font-size: 0.95rem; text-decoration: none; transition: all 0.2s ease; margin: 0.25rem 0.75rem; }
+.sidebar-link:hover { background: rgba(255, 255, 255, 0.04); color: var(--admin-text); }
+.sidebar-link.active { background: linear-gradient(135deg, rgba(217, 119, 6, 0.2), rgba(184, 93, 25, 0.2)); color: #fcd34d; border: 1px solid rgba(217, 119, 6, 0.3); box-shadow: 0 4px 15px rgba(217,119,6,0.1); }
+.admin-card { background: var(--admin-card); backdrop-filter: blur(12px); border: 1px solid var(--admin-border); border-radius: 1.25rem; padding: 1.5rem; transition: transform 0.3s, box-shadow 0.3s; }
+.admin-card-hover:hover { transform: translateY(-4px); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), 0 0 20px rgba(217,119,6,0.1); border-color: rgba(217, 119, 6, 0.4); }
+.stat-card { background: linear-gradient(135deg, var(--admin-card), rgba(217, 119, 6, 0.05)); border: 1px solid var(--admin-border); border-radius: 1.25rem; padding: 1.75rem; position: relative; overflow: hidden; }
+.stat-card::before { content: ""; position: absolute; top: -30px; right: -30px; width: 120px; height: 120px; border-radius: 50%; background: radial-gradient(circle, rgba(217, 119, 6, 0.15) 0%, transparent 70%); }
+.admin-table-row { border-top: 1px solid var(--admin-border); transition: background 0.2s ease; }
+.admin-table-row:hover { background: rgba(255, 255, 255, 0.02); }
+
+@media (max-width: 768px) {
+  .admin-sidebar { transform: translateX(-100%); }
+  .admin-content { margin-left: 0; }
+  .customer-card { padding: 1.5rem; }
+}
