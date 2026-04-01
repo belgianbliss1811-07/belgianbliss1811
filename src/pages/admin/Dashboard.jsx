@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import AdminLayout from "../../components/admin/AdminLayout";
-import { getAllOrders } from "../../services/orderService";
+import { supabase } from "../../lib/supabase";
 import { roundCurrency } from "../../utils/formatCurrency";
 
 const statusColors = {
@@ -16,8 +16,20 @@ const Dashboard = () => {
 
   const fetchOrders = useCallback(async () => {
     try {
-      const res = await getAllOrders();
-      setOrders(res.data || []);
+      const { data, error } = await supabase.from('orders').select('*, items:order_items(*)').order('created_at', { ascending: false });
+      if (error) throw error;
+      const formatted = (data || []).map(o => ({
+        ...o,
+        _id: o.id,
+        tableNumber: o.table_number,
+        customerWhatsApp: o.customer_phone,
+        orderStatus: o.status,
+        totalAmount: o.total,
+        paymentMode: o.payment_status,
+        createdAt: o.created_at,
+        items: o.items.map(i => ({ name: i.item_name, quantity: i.quantity, price: i.price }))
+      }));
+      setOrders(formatted);
     } catch {
       setOrders([]);
     } finally {

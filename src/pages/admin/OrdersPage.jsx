@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import AdminLayout from "../../components/admin/AdminLayout";
-import { getAllOrders, updateOrderStatus, deleteOrder, updateOrder } from "../../services/orderService";
+import { supabase } from "../../lib/supabase";
 import { formatCurrency } from "../../utils/formatCurrency";
 import toast from "react-hot-toast";
 
@@ -29,8 +29,20 @@ const OrdersPage = () => {
 
   const fetchOrders = useCallback(async () => {
     try {
-      const res = await getAllOrders();
-      setOrders(res.data || []);
+      const { data, error } = await supabase.from('orders').select('*, items:order_items(*)').order('created_at', { ascending: false });
+      if (error) throw error;
+      const formatted = (data || []).map(o => ({
+        ...o,
+        _id: o.id,
+        tableNumber: o.table_number,
+        customerWhatsApp: o.customer_phone,
+        orderStatus: o.status,
+        totalAmount: o.total,
+        paymentMode: o.payment_status,
+        createdAt: o.created_at,
+        items: o.items.map(i => ({ name: i.item_name, quantity: i.quantity, price: i.price }))
+      }));
+      setOrders(formatted);
     } catch {
       toast.error("Failed to fetch orders");
     } finally {
@@ -47,13 +59,13 @@ const OrdersPage = () => {
   const handleStatusUpdate = async (orderId, newStatus) => {
     setUpdatingId(orderId);
     try {
-      await updateOrderStatus(orderId, newStatus);
+      const { error } = await supabase.from('orders').update({ status: newStatus }).eq('id', orderId);
+      if (error) throw error;
       toast.success(`Order marked as ${newStatus}!`);
       if (newStatus === "Paid") toast.success("Click '📱 Send Bill' to WhatsApp the invoice!", { icon: '📲', duration: 4000 });
       fetchOrders();
     } catch (error) {
-      console.error("Status Update Error:", error);
-      toast.error(error?.response?.data?.message || error.message || "Failed to update status. Check console.");
+      toast.error("Failed to update status.");
     } finally {
       setUpdatingId(null);
     }
@@ -62,7 +74,8 @@ const OrdersPage = () => {
   const handleDelete = async (orderId) => {
     if (!window.confirm("Delete this order?")) return;
     try {
-      await deleteOrder(orderId);
+      const { error } = await supabase.from('orders').delete().eq('id', orderId);
+      if (error) throw error;
       toast.success("Order deleted");
       fetchOrders();
     } catch {
@@ -105,11 +118,11 @@ const OrdersPage = () => {
     }
 
     try {
-      // Asli API call backend par order update karne ke liye
-      await updateOrder(editingOrder._id, {
-        tableNumber: editTable,
-        customerWhatsApp: editWhatsApp
-      });
+      const { error } = await supabase.from('orders').update({
+        table_number: editTable,
+        customer_phone: editWhatsApp
+      }).eq('id', editingOrder._id);
+      if (error) throw error;
       toast.success("Order details updated successfully! ✅");
       fetchOrders(); // Update hone ke baad list refresh karna zaroori hai
       setEditingOrder(null);

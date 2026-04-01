@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import AdminLayout from "../../components/admin/AdminLayout";
-import api from "../../services/api";
+import { supabase } from "../../lib/supabase";
 import toast from "react-hot-toast";
 
 const TablesPage = () => {
@@ -9,8 +9,21 @@ const TablesPage = () => {
 
   const fetchTables = useCallback(async () => {
     try {
-      const res = await api.get("/tables");
-      setTables(res.data.data || []);
+      const { data: tablesData, error: tablesError } = await supabase.from('tables').select('*');
+      if (tablesError) throw tablesError;
+      const { data: ordersData } = await supabase.from('orders').select('*').neq('status', 'Paid');
+
+      const formattedTables = (tablesData || []).map(t => {
+        const activeOrder = (ordersData || []).find(o => o.table_number === String(t.table_number));
+        return {
+          tableNumber: t.table_number,
+          isOccupied: !!activeOrder,
+          orderStatus: activeOrder ? activeOrder.status : null,
+          totalAmount: activeOrder ? activeOrder.total : null,
+        };
+      });
+      formattedTables.sort((a, b) => parseInt(a.tableNumber) - parseInt(b.tableNumber));
+      setTables(formattedTables);
     } catch {
       toast.error("Failed to fetch table status");
     } finally {

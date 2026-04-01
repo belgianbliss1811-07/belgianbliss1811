@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../../context/CartContext";
-import { placeOrder } from "../../services/orderService";
+import { supabase } from "../../lib/supabase";
 import { formatCurrency, roundCurrency } from "../../utils/formatCurrency";
 import toast from "react-hot-toast";
 
@@ -17,16 +17,28 @@ const CheckoutPage = () => {
   const processOrderToBackend = async () => {
     setLoading(true);
     try {
-      const orderData = {
-        tableNumber: Number(selectedTable),
-        customerWhatsApp: whatsapp.trim(),
-        items: cartItems.map(({ id, name, category, price, quantity }) => ({ id, name, category, price, quantity })),
-        totalAmount: getCartTotal(),
-        paymentMode,
-      };
+      const { data: orderData, error: orderError } = await supabase.from('orders').insert([{
+        table_number: String(selectedTable),
+        customer_phone: whatsapp.trim(),
+        status: 'Pending',
+        total: getCartTotal(),
+        payment_status: paymentMode
+      }]).select().single();
 
-      const res = await placeOrder(orderData);
-      const newOrderId = res.data?._id || res.data?.data?._id || new Date().getTime(); 
+      if (orderError) throw orderError;
+      const newOrderId = orderData.id;
+
+      const orderItems = cartItems.map(item => ({
+        order_id: newOrderId,
+        menu_item_id: item.id,
+        item_name: item.name,
+        quantity: item.quantity,
+        price: item.price,
+        subtotal: item.price * item.quantity
+      }));
+
+      const { error: itemsError } = await supabase.from('order_items').insert(orderItems);
+      if (itemsError) throw itemsError;
 
       setCustomerWhatsApp(whatsapp.trim());
       setOrderId(newOrderId);
@@ -173,7 +185,7 @@ const CheckoutPage = () => {
       {showUPIModal && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", backdropFilter: "blur(8px)", display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 9999 }}>
           <div className="animate-slide-in" style={{ width: "100%", maxWidth: "520px", background: "var(--customer-card-bg)", backdropFilter: "blur(20px)", borderTopLeftRadius: "1.5rem", borderTopRightRadius: "1.5rem", padding: "2.5rem 2rem", position: "relative", borderTop: "1.5px solid var(--brand-primary)", boxShadow: "0 -10px 40px rgba(0,0,0,0.2)" }}>
-            
+
             <button
               onClick={() => !loading && setShowUPIModal(false)}
               style={{ position: "absolute", top: "1.25rem", right: "1.25rem", background: "rgba(111,78,55,0.1)", border: "none", width: "32px", height: "32px", borderRadius: "50%", color: "var(--customer-text)", fontSize: "1.1rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
@@ -202,7 +214,7 @@ const CheckoutPage = () => {
                 </div>
                 <span>→</span>
               </button>
-              
+
               <button
                 onClick={simulateOnlinePayment}
                 disabled={loading}

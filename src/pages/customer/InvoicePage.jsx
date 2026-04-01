@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getOrderById } from "../../services/orderService";
+import { supabase } from "../../lib/supabase";
 import { SHOP_NAME } from "../../utils/constants";
 import { formatCurrency } from "../../utils/formatCurrency";
 
@@ -14,8 +14,19 @@ const InvoicePage = () => {
   useEffect(() => {
     const fetchOrder = async () => {
       try {
-        const res = await getOrderById(orderId);
-        setOrder(res.data);
+        const { data, error } = await supabase.from('orders').select('*, items:order_items(*)').eq('id', orderId).single();
+        if (error || !data) throw new Error();
+        setOrder({
+          ...data,
+          _id: data.id,
+          tableNumber: data.table_number,
+          customerWhatsApp: data.customer_phone,
+          orderStatus: data.status,
+          paymentMode: data.payment_status,
+          totalAmount: data.total,
+          createdAt: data.created_at,
+          items: data.items.map(i => ({ name: i.item_name, quantity: i.quantity, price: i.price }))
+        });
       } catch {
         setError(true);
       } finally {

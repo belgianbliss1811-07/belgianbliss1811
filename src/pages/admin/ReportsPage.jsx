@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import AdminLayout from "../../components/admin/AdminLayout";
-import { getSummary } from "../../services/reportService";
+import { supabase } from "../../lib/supabase";
 import { formatCurrency } from "../../utils/formatCurrency";
 import toast from "react-hot-toast";
 
@@ -10,8 +10,36 @@ const ReportsPage = () => {
 
   const fetchReport = useCallback(async () => {
     try {
-      const res = await getSummary();
-      setData(res.data);
+      const { data: orders, error } = await supabase.from('orders').select('*, items:order_items(*)');
+      if (error) throw error;
+
+      const totalOrders = orders.length;
+      const totalRevenue = orders.filter(o => o.status === 'Paid' || o.payment_status === 'Online').reduce((sum, o) => sum + Number(o.total), 0);
+      const today = new Date().toDateString();
+      const todayRevenue = orders.filter(o => new Date(o.created_at).toDateString() === today && (o.status === 'Paid' || o.payment_status === 'Online')).reduce((sum, o) => sum + Number(o.total), 0);
+
+      const pendingOrders = orders.filter(o => o.status === 'Pending').length;
+      const preparingOrders = orders.filter(o => o.status === 'Preparing').length;
+      const servedOrders = orders.filter(o => o.status === 'Served').length;
+      const paidOrders = orders.filter(o => o.status === 'Paid').length;
+
+      const itemCounts = {};
+      orders.forEach(o => {
+        o.items.forEach(i => {
+          itemCounts[i.item_name] = (itemCounts[i.item_name] || 0) + i.quantity;
+        });
+      });
+      let topItem = null;
+      let max = 0;
+      Object.entries(itemCounts).forEach(([name, count]) => {
+        if (count > max) { topItem = { name, count }; max = count; }
+      });
+
+      const recentOrders = orders.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 5).map(o => ({
+        _id: o.id, tableNumber: o.table_number, totalAmount: o.total, createdAt: o.created_at, items: o.items.map(i => ({ name: i.item_name, quantity: i.quantity, price: i.price }))
+      }));
+
+      setData({ totalOrders, totalRevenue, todayRevenue, pendingOrders, preparingOrders, servedOrders, paidOrders, topItem, recentOrders });
     } catch {
       toast.error("Failed to load report");
     } finally {

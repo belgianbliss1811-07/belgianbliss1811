@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import AdminLayout from "../../components/admin/AdminLayout";
-import { getAllInvoices, sendInvoiceViaWhatsApp } from "../../services/billingService";
+import { supabase } from "../../lib/supabase";
 import { formatCurrency } from "../../utils/formatCurrency";
 import toast from "react-hot-toast";
 
@@ -11,8 +11,20 @@ const BillingPage = () => {
 
   const fetchInvoices = useCallback(async () => {
     try {
-      const res = await getAllInvoices();
-      setInvoices(res.data || []);
+      const { data, error } = await supabase.from('orders').select('*, items:order_items(*)').eq('status', 'Paid').order('created_at', { ascending: false });
+      if (error) throw error;
+      const formatted = (data || []).map(o => ({
+        ...o,
+        _id: o.id,
+        tableNumber: o.table_number,
+        customerWhatsApp: o.customer_phone,
+        orderStatus: o.status,
+        totalAmount: o.total,
+        paymentMode: o.payment_status,
+        paidAt: o.created_at,
+        items: o.items.map(i => ({ name: i.item_name, quantity: i.quantity, price: i.price }))
+      }));
+      setInvoices(formatted);
     } catch {
       toast.error("Failed to fetch invoices");
     } finally {
@@ -23,10 +35,23 @@ const BillingPage = () => {
   const handleSendWhatsApp = async (invoiceId) => {
     setSendingId(invoiceId);
     try {
-      await sendInvoiceViaWhatsApp(invoiceId);
+      const order = invoices.find(i => i._id === invoiceId);
+      if (!order) throw new Error("Order not found");
+
+      let phone = order.customerWhatsApp;
+      if (phone.length === 10) phone = "91" + phone;
+      phone = phone.replace(/\D/g, "");
+
+      const baseUrl = window.location.origin;
+      const invoiceUrl = `${baseUrl}/invoice/${order._id}`;
+      const text = `🧇 *Belgian Bliss*\n_Dessert Bowl & Waffle_\n\nHello! 👋\nHere is your digital invoice:\n${invoiceUrl}\n\nHave a wonderful day! 🍫✨`;
+
+      const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
+      window.open(waUrl, "_blank");
+
       toast.success("Invoice sent via WhatsApp ✅");
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to send invoice");
+      toast.error("Failed to send invoice");
     } finally {
       setSendingId(null);
     }

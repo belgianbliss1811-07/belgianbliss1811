@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import AdminLayout from "../../components/admin/AdminLayout";
-import { getMenuItems, createMenuItem, updateMenuItem, deleteMenuItem } from "../../services/menuService";
+import { supabase } from "../../lib/supabase";
 import toast from "react-hot-toast";
 
 const DEFAULT_CATEGORIES = ["Desserts", "Chocolate Bowls", "Waffles", "Coffee", "Boba Tea", "Combos", "Cone Cake", "Add Ons"];
@@ -8,22 +8,28 @@ const DEFAULT_CATEGORIES = ["Desserts", "Chocolate Bowls", "Waffles", "Coffee", 
 const MenuManagement = () => {
   const [menuItems, setMenuItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  
+
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
-  
+
   const [formData, setFormData] = useState({
     name: "", category: "Desserts", price: "", description: "", image: ""
   });
-  
+
   const [saving, setSaving] = useState(false);
 
   const fetchMenu = useCallback(async () => {
     try {
-      const res = await getMenuItems();
-      // res.data is expected to be an array from axios body `{ success, count, data: [...] }`
-      setMenuItems(res.data || []);
+      const { data, error } = await supabase.from('menu_items').select('*');
+      if (error) throw error;
+      const formatted = (data || []).map(item => ({
+        ...item,
+        _id: item.id,
+        image: item.image_url,
+        isAvailable: item.available
+      }));
+      setMenuItems(formatted);
     } catch {
       toast.error("Failed to fetch menu items");
     } finally {
@@ -69,15 +75,18 @@ const MenuManagement = () => {
         name: formData.name,
         category: formData.category,
         price: Number(formData.price),
-        description: formData.description,
-        image: formData.image
+        description: formData.description || "",
+        image_url: formData.image || "",
+        available: true
       };
 
       if (editingItem && editingItem._id) {
-        await updateMenuItem(editingItem._id, payload);
+        const { error } = await supabase.from('menu_items').update(payload).eq('id', editingItem._id);
+        if (error) throw error;
         toast.success("Item updated! ✏️");
       } else {
-        await createMenuItem(payload);
+        const { error } = await supabase.from('menu_items').insert([payload]);
+        if (error) throw error;
         toast.success("New item added! 🎉");
       }
       handleCloseModal();
@@ -93,7 +102,8 @@ const MenuManagement = () => {
   const handleDelete = async (id, name) => {
     if (!window.confirm(`Are you sure you want to delete "${name}"?`)) return;
     try {
-      await deleteMenuItem(id);
+      const { error } = await supabase.from('menu_items').delete().eq('id', id);
+      if (error) throw error;
       toast.success(`${name} deleted! 🗑`);
       fetchMenu();
     } catch {
@@ -107,7 +117,7 @@ const MenuManagement = () => {
 
   return (
     <AdminLayout title="Menu Management" subtitle={`${menuItems.length} live items across ${activeCategories.length} categories`}>
-      
+
       {/* Top Bar Actions */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2rem" }}>
         <button
@@ -147,7 +157,7 @@ const MenuManagement = () => {
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: "1rem" }}>
                 {items.map((item) => (
                   <div key={item._id} className="admin-card admin-card-hover" style={{ display: "flex", gap: "1rem", padding: "1.25rem", position: "relative" }}>
-                    
+
                     {/* Image */}
                     <div style={{ width: "70px", height: "70px", borderRadius: "0.75rem", overflow: "hidden", background: "rgba(0,0,0,0.3)", flexShrink: 0 }}>
                       {item.image ? (
@@ -198,41 +208,41 @@ const MenuManagement = () => {
       {/* Dynamic Add / Edit Modal */}
       {isModalOpen && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: "1.5rem" }}>
-          
+
           <div className="admin-card animate-fade-in" style={{ width: "100%", maxWidth: "500px", padding: "2rem", position: "relative" }}>
-            
+
             <button
               onClick={handleCloseModal}
               style={{ position: "absolute", top: "1rem", right: "1rem", background: "none", border: "none", color: "var(--admin-muted)", fontSize: "1.2rem", cursor: "pointer" }}
             >
               ✕
             </button>
-            
+
             <h2 className="font-display" style={{ color: "var(--admin-text)", fontSize: "1.5rem", fontWeight: "700", marginBottom: "1.5rem" }}>
               {editingItem ? "Edit Menu Item ✏️" : "Add New Item 🍽"}
             </h2>
 
             <form onSubmit={handleSave} style={{ display: "grid", gap: "1rem" }}>
-              
+
               {/* Name & Price Row */}
               <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "1rem" }}>
                 <div>
                   <label style={{ display: "block", color: "var(--admin-muted)", fontSize: "0.8rem", fontWeight: "600", marginBottom: "0.4rem" }}>Item Name *</label>
-                  <input type="text" required value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="input-field-dark" placeholder="e.g. Classic Waffle" />
+                  <input type="text" required value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="input-field-dark" placeholder="e.g. Classic Waffle" />
                 </div>
                 <div>
                   <label style={{ display: "block", color: "var(--admin-muted)", fontSize: "0.8rem", fontWeight: "600", marginBottom: "0.4rem" }}>Price (₹) *</label>
-                  <input type="number" required min="0" value={formData.price} onChange={(e) => setFormData({...formData, price: e.target.value})} className="input-field-dark" placeholder="99" />
+                  <input type="number" required min="0" value={formData.price} onChange={(e) => setFormData({ ...formData, price: e.target.value })} className="input-field-dark" placeholder="99" />
                 </div>
               </div>
 
               {/* Category */}
               <div>
                 <label style={{ display: "block", color: "var(--admin-muted)", fontSize: "0.8rem", fontWeight: "600", marginBottom: "0.4rem" }}>Category *</label>
-                <select 
-                  required 
-                  value={formData.category} 
-                  onChange={(e) => setFormData({...formData, category: e.target.value})} 
+                <select
+                  required
+                  value={formData.category}
+                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                   className="input-field-dark"
                   style={{ appearance: "none" }}
                 >
@@ -244,14 +254,14 @@ const MenuManagement = () => {
               {/* Image URL */}
               <div>
                 <label style={{ display: "block", color: "var(--admin-muted)", fontSize: "0.8rem", fontWeight: "600", marginBottom: "0.4rem" }}>Image Link / URL</label>
-                <input type="url" value={formData.image} onChange={(e) => setFormData({...formData, image: e.target.value})} className="input-field-dark" placeholder="https://example.com/image.jpg" />
-                {formData.image && <div style={{ marginTop: "0.5rem", display: "flex", gap: "0.5rem", alignItems: "center" }}><span style={{ fontSize: "0.75rem", color: "var(--admin-muted)" }}>Preview:</span> <img src={formData.image} alt="Preview" style={{ height: "30px", borderRadius: "4px" }} onError={(e) => e.target.style.display="none"} /></div>}
+                <input type="url" value={formData.image} onChange={(e) => setFormData({ ...formData, image: e.target.value })} className="input-field-dark" placeholder="https://example.com/image.jpg" />
+                {formData.image && <div style={{ marginTop: "0.5rem", display: "flex", gap: "0.5rem", alignItems: "center" }}><span style={{ fontSize: "0.75rem", color: "var(--admin-muted)" }}>Preview:</span> <img src={formData.image} alt="Preview" style={{ height: "30px", borderRadius: "4px" }} onError={(e) => e.target.style.display = "none"} /></div>}
               </div>
 
               {/* Description */}
               <div>
                 <label style={{ display: "block", color: "var(--admin-muted)", fontSize: "0.8rem", fontWeight: "600", marginBottom: "0.4rem" }}>Description</label>
-                <textarea value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} className="input-field-dark" placeholder="Short and sweet description..." rows={3} style={{ resize: "none" }} />
+                <textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="input-field-dark" placeholder="Short and sweet description..." rows={3} style={{ resize: "none" }} />
               </div>
 
               {/* Submit */}
