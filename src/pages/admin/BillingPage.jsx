@@ -43,11 +43,21 @@ const BillingPage = () => {
       await api.post("/api/billing/send-whatsapp", { orderId: invoiceId });
       toast.success("Invoice sent via backend! ✅");
     } catch (err) {
-      const errorMessage = err.response?.data?.message || err.message || "Failed to send invoice via backend.";
-      toast.error(errorMessage);
+      toast.error("Backend Twilio failed. Opening direct WhatsApp...");
+      // Bulletproof Fallback
+      const order = invoices.find(i => i._id === invoiceId);
+      let phone = order.customerWhatsApp.replace(/\D/g, "");
+      if (phone.length === 10) phone = "91" + phone;
+      const pdfUrl = `${import.meta.env.VITE_BACKEND_URL}/api/billing/invoice/${invoiceId}/pdf`;
+      const text = `🧇 *Belgian Bliss*\n\nHello! 👋\nThank you for visiting us!\n\n🧾 *Download your PDF Invoice:*\n${pdfUrl}\n\nHave a wonderful day! 🍫✨`;
+      window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`, "_blank");
     } finally {
       setSendingId(null);
     }
+  };
+
+  const viewPDF = (orderId) => {
+    window.open(`${import.meta.env.VITE_BACKEND_URL}/api/billing/invoice/${orderId}/pdf`, "_blank");
   };
 
   useEffect(() => {
@@ -136,24 +146,40 @@ const BillingPage = () => {
                   <p style={{ color: "var(--admin-muted)", fontSize: "0.8rem", marginTop: "0.25rem" }}>
                     {inv.items.map((i) => i.name).join(", ").slice(0, 35)}...
                   </p>
-                  <button
-                    onClick={() => handleSendWhatsApp(inv._id)}
-                    disabled={sendingId === inv._id}
-                    style={{
-                      marginTop: "0.75rem",
-                      padding: "0.4rem 0.8rem",
-                      borderRadius: "0.5rem",
-                      border: "1px solid rgba(34,197,94,0.3)",
-                      background: "rgba(34,197,94,0.1)",
-                      color: "#16a34a",
-                      fontSize: "0.75rem",
-                      cursor: "pointer",
-                      fontWeight: "600",
-                      opacity: sendingId === inv._id ? 0.6 : 1,
-                    }}
-                  >
-                    {sendingId === inv._id ? "📤 Sending..." : "📱 Send WhatsApp"}
-                  </button>
+                  <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end", marginTop: "0.75rem" }}>
+                    <button
+                      onClick={() => viewPDF(inv._id)}
+                      style={{
+                        padding: "0.4rem 0.8rem",
+                        borderRadius: "0.5rem",
+                        border: "1px solid rgba(255,255,255,0.2)",
+                        background: "rgba(255,255,255,0.05)",
+                        color: "#ffffff",
+                        fontSize: "0.75rem",
+                        cursor: "pointer",
+                        fontWeight: "600",
+                      }}
+                    >
+                      📄 PDF
+                    </button>
+                    <button
+                      onClick={() => handleSendWhatsApp(inv._id)}
+                      disabled={sendingId === inv._id}
+                      style={{
+                        padding: "0.4rem 0.8rem",
+                        borderRadius: "0.5rem",
+                        border: "1px solid rgba(34,197,94,0.3)",
+                        background: "rgba(34,197,94,0.1)",
+                        color: "#16a34a",
+                        fontSize: "0.75rem",
+                        cursor: "pointer",
+                        fontWeight: "600",
+                        opacity: sendingId === inv._id ? 0.6 : 1,
+                      }}
+                    >
+                      {sendingId === inv._id ? "📤 Sending..." : "📱 WhatsApp"}
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}

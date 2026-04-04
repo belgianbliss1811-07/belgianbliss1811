@@ -101,8 +101,18 @@ const OrdersPage = () => {
       await api.post("/api/billing/send-whatsapp", { orderId: order._id });
       toast.success("Invoice sent successfully! ✅", { id: toastId });
     } catch (error) {
-      toast.error(error.response?.data?.message || "Backend failed to send invoice.", { id: toastId });
+      toast.error("Backend Twilio failed. Opening direct WhatsApp...", { id: toastId });
+      // Bulletproof Fallback: Open wa.me link directly
+      let phone = order.customerWhatsApp.replace(/\D/g, "");
+      if (phone.length === 10) phone = "91" + phone;
+      const pdfUrl = `${import.meta.env.VITE_BACKEND_URL}/api/billing/invoice/${order._id}/pdf`;
+      const text = `🧇 *Belgian Bliss*\n\nHello! 👋\nThank you for visiting us!\n\n🧾 *Download your PDF Invoice:*\n${pdfUrl}\n\nHave a wonderful day! 🍫✨`;
+      window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`, "_blank");
     }
+  };
+
+  const viewPDF = (orderId) => {
+    window.open(`${import.meta.env.VITE_BACKEND_URL}/api/billing/invoice/${orderId}/pdf`, "_blank");
   };
 
   const handleSaveEdit = async () => {
@@ -268,12 +278,20 @@ const OrdersPage = () => {
                     </button>
                   )}
                   {order.orderStatus === "Paid" && (
-                    <button
-                      onClick={() => handleSendWhatsApp(order)}
-                      style={{ gridColumn: "span 2", padding: "0.75rem", borderRadius: "0.5rem", background: "rgba(34,197,94,0.15)", border: "1px solid rgba(34,197,94,0.4)", color: "#4ade80", fontSize: "0.9rem", fontWeight: "700", cursor: "pointer", transition: "all 0.2s" }}
-                    >
-                      📲 Send WhatsApp Bill
-                    </button>
+                    <>
+                      <button
+                        onClick={() => handleSendWhatsApp(order)}
+                        style={{ gridColumn: "span 1", padding: "0.75rem", borderRadius: "0.5rem", background: "rgba(34,197,94,0.15)", border: "1px solid rgba(34,197,94,0.4)", color: "#4ade80", fontSize: "0.8rem", fontWeight: "700", cursor: "pointer", transition: "all 0.2s" }}
+                      >
+                        📲 Send WhatsApp
+                      </button>
+                      <button
+                        onClick={() => viewPDF(order._id)}
+                        style={{ gridColumn: "span 1", padding: "0.75rem", borderRadius: "0.5rem", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.2)", color: "#fff", fontSize: "0.8rem", fontWeight: "700", cursor: "pointer", transition: "all 0.2s" }}
+                      >
+                        📄 View PDF Bill
+                      </button>
+                    </>
                   )}
                   <button
                     onClick={() => openEditModal(order)}

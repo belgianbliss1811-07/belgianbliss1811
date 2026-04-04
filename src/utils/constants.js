@@ -1,4 +1,4 @@
-export const SHOP_NAME = "Belgiam Bliss Dessert Bowl & Waffle";
+export const SHOP_NAME = "Belgian Bliss Dessert Bowl & Waffle";
 
 export const TABLES = [1, 2, 3, 4, 5];
 
